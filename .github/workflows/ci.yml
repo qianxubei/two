@@ -1,0 +1,39 @@
+name: C Project CI/CD
+
+# 触发条件：main分支push、PR都触发
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted   # 指定跑在我们内网自建runner上
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 查看环境
+        run: |
+          docker info
+          make -v
+
+      - name: 编译C程序
+        run: make
+
+      - name: 登录Harbor
+        run: echo "${{ secrets.HARBOR_PWD }}" | docker login ${{ secrets.HARBOR_URL }} -u ${{ secrets.HARBOR_USER }} --password-stdin
+
+      - name: 构建镜像
+        run: docker build -t ${{ secrets.HARBOR_URL }}/c-demo/app:v${{ github.sha }} .
+        # 标签用github.sha（commit哈希），每次提交标签唯一，避免覆盖
+
+      - name: 推送镜像到Harbor
+        run: docker push ${{ secrets.HARBOR_URL }}/c-demo/app:v${{ github.sha }}
+
+      # ============ 可选CD阶段：拉取镜像，在本机部署运行 ============
+      - name: CD:停止旧容器,启动新版本
+        run: |
+          docker rm -f c-demo-app || true
+          docker run -d --name c-demo-app ${{ secrets.HARBOR_URL }}/c-demo/app:v${{ github.sha }}
