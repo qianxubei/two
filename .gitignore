@@ -1,0 +1,10 @@
+# C编译产物
+app
+*.o
+*.out
+# 临时文件
+*.swp
+*.swo
+.DS_Store
+# docker无关缓存、日志
+*.log
