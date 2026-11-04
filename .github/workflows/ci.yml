@@ -23,14 +23,14 @@ jobs:
         run: make
 
       - name: 登录Harbor
-        run: echo "${{ secrets.HARBOR_PWD }}" | docker login ${{ secrets.HARBOR_URL }} -u ${{ secrets.HARBOR_USER }} --password-stdin
+        run: echo "${{ secrets.HARBOR_PWD }}" | docker login ${{ secrets.HARBOR_URL }}:8081 -u ${{ secrets.HARBOR_USER }} --password-stdin
 
       - name: 构建镜像
-        run: docker build -t ${{ secrets.HARBOR_URL }}/c-demo/app:v${{ github.sha }} .
+        run: docker build -t ${{ secrets.HARBOR_URL }}:8081/c-demo/app:v${{ github.sha }} .
         # 标签用github.sha（commit哈希），每次提交标签唯一，避免覆盖
 
       - name: 推送镜像到Harbor
-        run: docker push ${{ secrets.HARBOR_URL }}/c-demo/app:v${{ github.sha }}
+        run: docker push ${{ secrets.HARBOR_URL }}:8081/c-demo/app:v${{ github.sha }}
 
       # ============ 可选CD阶段：拉取镜像，在本机部署运行 ============
       - name: CD:停止旧容器,启动新版本
