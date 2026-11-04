@@ -8,3 +8,5 @@ app
 .DS_Store
 # docker无关缓存、日志
 *.log
+*.exe
+
