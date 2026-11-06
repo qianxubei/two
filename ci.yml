@@ -1,0 +1,36 @@
+name: C Project CI/CD K8s
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-push-deploy:
+    runs-on: self-hosted
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 本地gcc静态编译
+        run: |
+          gcc -static main.c -o app
+          chmod +x app
+          ls -l app
+
+      - name: 登录Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PWD }}" | docker login ${{ secrets.HARBOR_URL }}:8081 -u ${{ secrets.HARBOR_USER }} --password-stdin
+
+      - name: 构建并推送镜像
+        run: |
+          docker build -t ${{ secrets.HARBOR_URL }}:8081/library/app:${{ github.sha }} .
+          docker push ${{ secrets.HARBOR_URL }}:8081/library/app:${{ github.sha }}
+
+      - name: 部署到K8s
+        run: |
+          scp -P 60888 app-deploy.yaml root@${{ secrets.K8S_HOST }}:/tmp/app-deploy.yaml
+          ssh -p 60888 root@${{ secrets.K8S_HOST }} "
+            sed -i 's|PLACEHOLDER_TAG|${{ github.sha }}|' /tmp/app-deploy.yaml &&
+            kubectl apply -f /tmp/app-deploy.yaml &&
+            kubectl rollout status deploy/c-app --timeout=120s
+          "

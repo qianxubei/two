@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c-app
+  namespace: default
+  labels:
+    app: c-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: c-app
+  template:
+    metadata:
+      labels:
+        app: c-app
+    spec:
+      imagePullSecrets:
+        - name: harbor-secret
+      containers:
+        - name: c-app
+          image: 10.10.10.219:8081/library/app:PLACEHOLDER_TAG
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
